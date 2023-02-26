@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
 	long int a, b, c, d;
 	int counter = 0;
 	while (1) {
-		if (fscanf(input, "%d%d%d%d", &a, &b, &c, &d) != EOF) {
+		if (fscanf(input, "%lu%lu%lu%lu", &a, &b, &c, &d) != EOF) {
 			pieces[counter].a=a;
 			pieces[counter].b=b;
 			pieces[counter].c=c;
@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
 			D printf("count: %d \n", count);
 			if (count == 0) {
 				force_fallback_flag = 1;
-				D printf("Setting the fallback flag \n", top);
+				D printf("Setting the fallback flag \n");
 			}
 		}
 		D printf("Force fallback %d \n", force_fallback_flag);
@@ -360,8 +360,10 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 
 unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
+#include "precomputed-options.c"
 
-	for (int i = 0; i <256; i++) {
+        for (int p = 0; p < options_length; p++) {
+                int i = options[p];
 
 		if (pieces[i].used == 1) continue;
 
