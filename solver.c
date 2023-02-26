@@ -423,8 +423,6 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 			D printf("The winner is %d - %d %d %d %d +correct rotation\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i;
 			count++;
-                        // TODO: Remove this continue, because the piece can match even with more rotations...
-			continue;
 		}
 
 		if ( ( (top    == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == top) &&
@@ -434,7 +432,6 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 			D printf("The winner is %d - %d %d %d %d +left->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i | LEFT_TOP;
 			count++;
-			continue;
 		}
 		if ( ( (top    == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == top) &&
 		     ( (right  == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == right) &&
@@ -443,7 +440,6 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 			D printf("The winner is %d - %d %d %d %d +bottom->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i | BOTTOM_TOP;
 			count++;
-			continue;
 		}
 		if ( ( (top    == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == top) &&
 		     ( (right  == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == right) &&
@@ -452,7 +448,6 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 			D printf("The winner is %d - %d %d %d %d +right->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i | RIGHT_TOP;
 			count++;
-			continue;
 		}
 	}
 	return count;
