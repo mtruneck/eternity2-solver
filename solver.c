@@ -44,11 +44,15 @@ piece pieces_reference[256];
 piece * board[256];
 
 
-// Declaration of buffers
+// Declaration of buffers (arrays of fitting pieces for the particular position)
+// Each piece is identified by its number and rotation tag/mask (TOP_TOP/RIGHT_TOP,etc.)
 #define BUFFERS 256
 unsigned char current_buffer = 0;
+// Lengths of each buffer
 unsigned char buffer_counts[BUFFERS];
+// If there is at least one constraint, 15 is enough
 unsigned int  buffers[BUFFERS][15]; // 15 is empiricaly found sufficient size
+// Used when we want to only check the number of fitting pieces and throw away result
 unsigned int  fake_buffer[255];
 
 
@@ -77,6 +81,7 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 void print_buffers();
 
 void print_board();
+void print_board_with_options();
 int check_board();
 
 
@@ -216,9 +221,8 @@ int main(int argc, char** argv) {
 				max = iterator;
 				if (max > 190) {
 					fprintf(stderr, "Max:%d\n", max);
-					print_board();
+                                        print_board_with_options();
 				}
-
 			}
 
 			if (number_of_fallbacks < FALLBACKS) {
@@ -227,6 +231,7 @@ int main(int argc, char** argv) {
 				current_buffer = (current_buffer+BUFFERS-1)%BUFFERS;
 				iterator--;
 				current = order[iterator];
+                                // Skip the pre-defined pieces on the way back, too
 				if (current == 34 || current==45 || current==135 || current == 210 || current == 221) {
 					iterator--;
 				}
@@ -315,6 +320,7 @@ int main(int argc, char** argv) {
 	} // End of for - iterating over the places on board
 
         print_board();
+        print_board_with_options();
         res = check_board();
 
 	return res;
@@ -480,6 +486,38 @@ void print_board() {
 		}
 	}
 	fprintf(stderr, "\n");
+
+}
+
+void print_board_with_options() {
+
+	for (int i = 0; i < 256; i++) {
+		if (i%16 == 0) fprintf(stderr, "\n");
+		if (board[i] != NULL) {
+			fprintf(stderr, "%4d", board[i]->number);
+		} else {
+			fprintf(stderr, "  --");
+		}
+	}
+	fprintf(stderr, "\n");
+
+	unsigned char top, left, right, bottom;
+        unsigned int buffer[250];
+        unsigned char count;
+
+	for (int i = 0; i < 256; i++) {
+            if (board[i] == NULL) {
+               get_constraints(i, &top, &right, &bottom, &left);
+               if (top != 30 || right !=30 || bottom != 30 || left != 30) {
+                   count = get_fitting_pieces(buffer, top, right,  bottom, left);
+                   printf("For position %d, there are %d options:", i, count);
+                   for (int j = 0; j < count; j++) {
+                       printf("%d ", buffer[j] & WITHOUT_TAGS );
+                   }
+                   printf("\n");
+               }
+            }
+	}
 
 }
 
