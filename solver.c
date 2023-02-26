@@ -47,8 +47,8 @@ unsigned char current_buffer = 0;
 // Lengths of each buffer
 unsigned char buffer_counts[BUFFERS];
 // If there is at least one constraint, 15 is enough
-#define BUFFERS_LENGTH
-unsigned int  buffers[BUFFERS][15]; // 15 is empiricaly found sufficient size
+#define BUFFERS_LENGTH 15
+unsigned int  buffers[BUFFERS][BUFFERS_LENGTH]; // 15 is empiricaly found sufficient size
 // Used when we want to only check the number of fitting pieces and throw away result
 unsigned int  fake_buffer[255];
 
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 		buffer_counts[i] = 0;
 	}
 	for (int i = 0; i < BUFFERS; i++) {
-		for (int j = 0; j < 200; j++) {
+		for (int j = 0; j < BUFFERS_LENGTH; j++) {
 			buffers[i][j] = 300;
 		}
 	}
