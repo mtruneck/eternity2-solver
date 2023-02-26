@@ -1,12 +1,14 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #ifdef DEBUG
- #define D if(1) 
+ #define D if(1)
 #else
- #define D if(0) 
+ #define D if(0)
 #endif
 
 // Rotation flags (to be able to pass them with the piece number)
@@ -47,10 +49,11 @@ piece * board[256];
 unsigned char current_buffer = 0;
 unsigned char buffer_counts[BUFFERS];
 unsigned int  buffers[BUFFERS][15]; // 15 is empiricaly found sufficient size
+unsigned int  fake_buffer[255];
 
 
 // Declarations regarding fallbacks
-#define FALLBACKS 2000000
+#define FALLBACKS 1000000
 unsigned int number_of_fallbacks = 0;
 unsigned char fallback_flag = 0;
 
@@ -63,6 +66,8 @@ int order[256] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 31, 47, 
 int order_ram[256] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 31, 47, 63, 79, 95, 111, 127, 143, 159, 175, 191, 207, 223, 239, 255, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254};
 
 int order_original[256] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255};
+
+int places_to_check[12] = {17, 18, 33, 29, 30, 46, 209, 225, 226, 222, 237, 238};
 
 // Fill the arguments with according colors needed at given position
 void get_constraints(int position, unsigned char *top, unsigned char *right, unsigned char *bottom, unsigned char *left);
@@ -80,8 +85,10 @@ int main(int argc, char** argv) {
 	// for return code
 	int res;
 
+	struct timespec spec;
+	clock_gettime(CLOCK_REALTIME, &spec);
 	// General initialization of arrays and random generator
-	srand ( getpid() + time(NULL) );
+	srand (spec.tv_sec + spec.tv_nsec);
 	for (int i = 0; i <256; i++) {
 		board[i] = NULL;
 	}
@@ -93,7 +100,7 @@ int main(int argc, char** argv) {
 			buffers[i][j] = 300;
 		}
 	}
-	
+
 	// Load pieces from file
 	FILE* input;
 	input = fopen("pieces.txt", "r");
@@ -144,6 +151,7 @@ int main(int argc, char** argv) {
 
 	//  Loop over current position on board to be solved
 	int iterator = 0;
+	int force_fallback_flag;
 	while (1) {
 
 		if (iterator == 256) break;
@@ -173,8 +181,33 @@ int main(int argc, char** argv) {
 
 		D printf( "Delka aktualniho bufferu je %d\n", buffer_counts[current_buffer]);
 
+		force_fallback_flag = 0;
+		// Check if I have still pieces for special positions
+		for (int q = 0; q < 12; q++) {
+			int count;
+			//if it's not placed already
+			if (board[places_to_check[q]] != NULL) {
+				continue;
+			}
+			get_constraints(places_to_check[q], &top, &right, &bottom, &left);
+			// if it's anything to check there
+			if (top != 30 || right != 30 || bottom != 30 || left != 30){
+				D printf("something to check %d \n", places_to_check[q]);
+				count = get_fitting_pieces(fake_buffer, top, right,  bottom, left);
+			} else {
+				continue;
+			}
+			D printf("Top: %d Right: %d Bottom: %d Left: %d \n", top, right, bottom, left);
+			D printf("count: %d \n", count);
+			if (count == 0) {
+				force_fallback_flag = 1;
+				D printf("Setting the fallback flag \n", top);
+			}
+		}
+		D printf("Force fallback %d \n", force_fallback_flag);
+		// If not -> force fallback
 		// End loop if no further option is posible
-		if (buffer_counts[current_buffer] == 0) {
+		if (buffer_counts[current_buffer] == 0 || force_fallback_flag) {
 
 		    // if (! fallback_flag) { printf("local max: %d\n", iterator); }
 
@@ -189,7 +222,7 @@ int main(int argc, char** argv) {
 			}
 
 			if (number_of_fallbacks < FALLBACKS) {
-				
+
 				// Move to the previous buffer and position
 				current_buffer = (current_buffer+BUFFERS-1)%BUFFERS;
 				iterator--;
@@ -203,8 +236,8 @@ int main(int argc, char** argv) {
 				int to_remove = 1000;
 				D printf("hledame %d v bufferu cislo %d\n", board[current]->number, current_buffer);
 				for (int l = 0; l < buffer_counts[current_buffer]; l++) {
-					//D printf(" %d ", buffers[current_buffer][l] & WITHOUT_TAGS);
-					//D printf(" %d ", board[current]->number);
+					D printf(" %d ", buffers[current_buffer][l] & WITHOUT_TAGS);
+					D printf(" %d ", board[current]->number);
 					int x = buffers[current_buffer][l] & WITHOUT_TAGS;
 					int w = board[current]->number;
 					if ( x == w ) { to_remove = l; }
@@ -232,7 +265,7 @@ int main(int argc, char** argv) {
 		}
 
 		//if (fallback_flag) { printf("new: %d\n", iterator); }
-		
+
 		// reset fallback_flag
 		fallback_flag = 0;
 
@@ -269,7 +302,7 @@ int main(int argc, char** argv) {
 			pieces[winner].d = pieces_reference[winner].d;
 			D printf("top - top\n");
 		}
-		
+
 		board[current] = &pieces[winner];
 		pieces[winner].used = 1;
 
@@ -419,7 +452,7 @@ int check_board() {
 		//if (i%16 == 0) fprintf(stderr, "\n");
 		if (board[i] != NULL) {
 			get_constraints(i, &top, &right, &bottom, &left);
-			if ((top != 30 && top != board[i]->a) || 
+			if ((top != 30 && top != board[i]->a) ||
 				(top != 30 && top != board[i]->a) ||
 				(top != 30 && top != board[i]->a) ||
 				(top != 30 && top != board[i]->a)) {
@@ -447,4 +480,5 @@ void print_board() {
 	fprintf(stderr, "\n");
 
 }
+
 
