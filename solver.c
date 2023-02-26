@@ -242,13 +242,14 @@ int main(int argc, char** argv) {
 				}
 			}
 
+                        // Increasing the fallbacks number when high max positions achieved
+                        // max < 60 => FALLBACKS
+                        // max < 120 => 2*FALLBACKS
+                        // max < 180 => 4*FALLBACKS
 			if (number_of_fallbacks < FALLBACKS*((max/60)*(max/60)+1)) {
 
-                                // This lost its sense when I created a buffer for each position
-                                // Originally wanted to have less of them not to waste memory
-                                // TODO: Remove this shit
-				current_buffer = (current_buffer+BUFFERS-1)%BUFFERS;
 				// Move to the previous buffer and position
+				current_buffer--;
 				iterator--;
 				current = order[iterator];
 
