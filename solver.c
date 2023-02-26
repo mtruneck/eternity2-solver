@@ -271,9 +271,10 @@ int main(int argc, char** argv) {
 				}
 				if (to_remove == 1000) printf("Something's broken :( , %d \n", current);
 				if (to_remove == (buffer_counts[current_buffer]-1)) {
+                                        // If we want to remove the last one, only decrease the size by 1
 					buffer_counts[current_buffer] = buffer_counts[current_buffer]-1;
 				} else {
-                                        // TODO: This doesn't make sense!!!!! Or does it?
+                                        // Remove the element by replacing it with the last one and decrese the size by 1
 					buffers[current_buffer][to_remove] = buffers[current_buffer][buffer_counts[current_buffer]-1];
 					buffer_counts[current_buffer] = buffer_counts[current_buffer]-1;
 				}
