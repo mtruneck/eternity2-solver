@@ -46,6 +46,8 @@ piece * board[256];
 unsigned char current_buffer = 0;
 // Lengths of each buffer
 unsigned char buffer_counts[BUFFERS];
+// Store the position of the used piece in a buffer
+unsigned char position_of_used_piece_in_buffer[BUFFERS];
 // If there is at least one constraint, 15 is enough
 #define BUFFERS_LENGTH 15
 unsigned int  buffers[BUFFERS][BUFFERS_LENGTH]; // 15 is empiricaly found sufficient size
@@ -259,24 +261,13 @@ int main(int argc, char** argv) {
 				}
 				current = order[iterator];
 
-                                // TODO: Just store the index of the used piece and we can get rid of this loop:
 				// Remove current piece from buffer not to be chosen again
-				int to_remove = 1000;
-				D printf("looking for %d in buffer number %d\n", board[current]->number, current_buffer);
-				for (int l = 0; l < buffer_counts[current_buffer]; l++) {
-					D printf(" %d ", buffers[current_buffer][l] & WITHOUT_TAGS);
-					D printf(" %d ", board[current]->number);
-					int x = buffers[current_buffer][l] & WITHOUT_TAGS;
-					int w = board[current]->number;
-					if ( x == w ) { to_remove = l; }
-				}
-				if (to_remove == 1000) printf("Something's broken :( , %d \n", current);
-				if (to_remove == (buffer_counts[current_buffer]-1)) {
+				if (position_of_used_piece_in_buffer[current_buffer] == (buffer_counts[current_buffer]-1)) {
                                         // If we want to remove the last one, only decrease the size by 1
 					buffer_counts[current_buffer] = buffer_counts[current_buffer]-1;
 				} else {
                                         // Remove the element by replacing it with the last one and decrese the size by 1
-					buffers[current_buffer][to_remove] = buffers[current_buffer][buffer_counts[current_buffer]-1];
+					buffers[current_buffer][position_of_used_piece_in_buffer[current_buffer]] = buffers[current_buffer][buffer_counts[current_buffer]-1];
 					buffer_counts[current_buffer] = buffer_counts[current_buffer]-1;
 				}
 
@@ -302,6 +293,7 @@ int main(int argc, char** argv) {
 		unsigned char chosen = rand() % buffer_counts[current_buffer];
 		unsigned int  number = buffers[current_buffer][chosen];
 		unsigned char winner = buffers[current_buffer][chosen & WITHOUT_TAGS];
+                position_of_used_piece_in_buffer[current_buffer] = chosen;
 		D printf("Aaaand, the winner is %d\n", winner);
 
 		// Get piece from referential array with correct rotation
