@@ -101,11 +101,15 @@ void print_board_with_options();
 // there is no stupid error in the code)
 int check_board();
 
+int options[24][24][24][24][256];
+int options_lengths[24][24][24][24];
 
 int main(int argc, char** argv) {
 
 	// for return code
 	int res;
+
+#include "precomputed-options-array.c"
 
         // Initialize the random number generator
 	struct timespec spec;
@@ -382,12 +386,14 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
 
-// This is a big magic - precomputed arrays for each constraint, makes it super fast
-// defines options[] and options_length
-#include "precomputed-options.c"
+        unsigned char w, x, y, z;
+        if (top == 30)    { w = 23; } else { w = top; }
+        if (right == 30)  { x = 23; } else { x = right; }
+        if (bottom == 30) { y = 23; } else { y = bottom; }
+        if (left == 30)   { z = 23; } else { z = left; }
 
-        for (int p = 0; p < options_length; p++) {
-                int i = options[p];
+        for (int p = 0; p < options_lengths[w][x][y][z]; p++) {
+                int i = options[w][x][y][z][p];
 
 		if (pieces[i].used == 1) continue;
 

@@ -54,33 +54,27 @@ int main(int argc, char** argv) {
 	}
 	fclose(input);
 
+        unsigned char count;
         unsigned char top = 0;
         unsigned char right = 0;
         unsigned char bottom = 0;
         unsigned char left = 0;
 
-        printf("int options[256];\nint options_length;\n");
+        //printf("int options[24][24][24][24][256];\nint options_lengths[24][24][24][24];\n");
         for (int i = 0; i < 24; i++) {
-          if (i == 23) { i = 30; }
-          printf("if (top == %d) {\n", i);
+          if (i == 23) { top = 30; } else { top = i; }
           for (int j = 0; j < 24; j++) {
-            if (j == 23) { j = 30; }
-            printf("  if (right == %d) {\n", j);
+            if (j == 23) { right = 30; } else { right = j; }
             for (int k = 0; k < 24; k++) {
-              if (k == 23) { k = 30; }
-              printf("    if (bottom == %d) {\n", k);
+              if (k == 23) { bottom = 30; } else { bottom = k; }
               for (int l = 0; l < 24; l++) {
-                if (l == 23) { l = 30; }
-                printf("      if (left == %d) { ", l);
-                //printf("Barvy: %d %d %d %d: ", i, j, k, l);
-                get_fitting_pieces(i, j, k, l);
-                printf(" }\n");
+                if (l == 23) { left = 30; } else { left = l; }
+                //printf("I have %d %d  %d %d \n", i, j, k, l);
+                //printf("gonna call %d %d  %d %d \n", top, right, bottom, left);
+                count = get_fitting_pieces(top, right, bottom, left);
               }
-              printf("    }\n");
             }
-            printf("  }\n");
           }
-          printf("}\n");
         }
         return 0;
 
@@ -89,6 +83,12 @@ int main(int argc, char** argv) {
 unsigned char get_fitting_pieces(const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
         //printf("zde");
+
+        unsigned char w, x, y, z;
+        if (top == 30)    { w = 23; } else { w = top; }
+        if (right == 30)  { x = 23; } else { x = right; }
+        if (bottom == 30) { y = 23; } else { y = bottom; }
+        if (left == 30)   { z = 23; } else { z = left; }
 
 	for (int i = 0; i <256; i++) {
 
@@ -129,7 +129,7 @@ unsigned char get_fitting_pieces(const unsigned char top, const unsigned char ri
 		     ( (bottom == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == bottom) &&
 		     ( (left   == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == left) ) {
 			//printf("D%d(%d %d %d %d) ", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-                        printf("options[%d] = %d; ", count, i);
+                        printf("options[%d][%d][%d][%d][%d] = %d;\n", w, x, y, z, count, i);
 			count++;
 			continue;
 		}
@@ -140,7 +140,7 @@ unsigned char get_fitting_pieces(const unsigned char top, const unsigned char ri
 		     ( (bottom == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == bottom) &&
 		     ( (left   == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == left) ) {
 			//printf("D%d(%d %d %d %d) ", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-                        printf("options[%d] = %d; ", count, i);
+                        printf("options[%d][%d][%d][%d][%d] = %d;\n", w, x, y, z, count, i);
 			count++;
 			continue;
 		}
@@ -150,7 +150,7 @@ unsigned char get_fitting_pieces(const unsigned char top, const unsigned char ri
 		     ( (bottom == 30 && pieces_reference[i].a != 0) || pieces_reference[i].a == bottom) &&
 		     ( (left   == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == left) ) {
 			//printf("D%d(%d %d %d %d) ", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-                        printf("options[%d] = %d; ", count, i);
+                        printf("options[%d][%d][%d][%d][%d] = %d;\n", w, x, y, z, count, i);
 			count++;
 			continue;
                 //printf("h ");
@@ -160,13 +160,13 @@ unsigned char get_fitting_pieces(const unsigned char top, const unsigned char ri
 		     ( (bottom == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == bottom) &&
 		     ( (left   == 30 && pieces_reference[i].a != 0) || pieces_reference[i].a == left) ) {
 			//printf("D%d(%d %d %d %d) ", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-                        printf("options[%d] = %d; ", count, i);
+                        printf("options[%d][%d][%d][%d][%d] = %d;\n", w, x, y, z, count, i);
 			count++;
 			continue;
 		}
 		//printf("\n");
 	}
-        printf("options_length = %d;", count);
+        printf("options_lengths[%d][%d][%d][%d] = %d;\n", w, x, y, z, count);
 	return count;
 }
 
