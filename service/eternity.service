@@ -1,0 +1,15 @@
+[Unit]
+Description = Eternity Solver App
+After = network.target
+
+[Service]
+WorkingDirectory=/home/ubuntu
+Type=simple
+ExecStart=/home/ubuntu/manager.sh
+TimeoutSec=0
+RemainAfterExit=yes
+GuessMainPID=no
+
+[Install]
+WantedBy=multi-user.target
+
