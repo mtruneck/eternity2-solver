@@ -389,69 +389,14 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
 
+        D printf("Going to get fitting pieces for %d %d %d %d - length of options: %d\n", top, right, bottom, left, options_lengths[top][right][bottom][left]);
         for (int p = 0; p < options_lengths[top][right][bottom][left]; p++) {
                 int i = options[top][right][bottom][left][p];
 
-		if (pieces[i].used == 1) continue;
-
-		if (left != 23) {
-			if (pieces_reference[i].a != left &&
-				pieces_reference[i].b != left &&
-				pieces_reference[i].c != left &&
-				pieces_reference[i].d != left) continue;
-		}
-		if (top != 23) {
-			if (pieces_reference[i].a != top &&
-				pieces_reference[i].b != top &&
-				pieces_reference[i].c != top &&
-				pieces_reference[i].d != top) continue;
-		}
-		if (right != 23) {
-			if (pieces_reference[i].a != right &&
-				pieces_reference[i].b != right &&
-				pieces_reference[i].c != right &&
-				pieces_reference[i].d != right) continue;
-		}
-		if (bottom != 23) {
-			if (pieces_reference[i].a != bottom &&
-				pieces_reference[i].b != bottom &&
-				pieces_reference[i].c != bottom &&
-				pieces_reference[i].d != bottom) continue;
-		}
-
-		if ( ( (top    == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == top   ) &&
-		     ( (right  == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == right ) &&
-		     ( (bottom == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == bottom) &&
-		     ( (left   == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == left) ) {
-			D printf("The winner is %d - %d %d %d %d +correct rotation\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-			buffer[count] = i;
-			count++;
-		}
-
-		if ( ( (top    == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == top) &&
-		     ( (right  == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == right) &&
-		     ( (bottom == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == bottom) &&
-		     ( (left   == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == left) ) {
-			D printf("The winner is %d - %d %d %d %d +left->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-			buffer[count] = i | LEFT_TOP;
-			count++;
-		}
-		if ( ( (top    == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == top) &&
-		     ( (right  == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == right) &&
-		     ( (bottom == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == bottom) &&
-		     ( (left   == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == left) ) {
-			D printf("The winner is %d - %d %d %d %d +bottom->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-			buffer[count] = i | BOTTOM_TOP;
-			count++;
-		}
-		if ( ( (top    == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == top) &&
-		     ( (right  == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == right) &&
-		     ( (bottom == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == bottom) &&
-		     ( (left   == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == left) ) {
-			D printf("The winner is %d - %d %d %d %d +right->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
-			buffer[count] = i | RIGHT_TOP;
-			count++;
-		}
+		if (pieces[i & WITHOUT_TAGS].used == 1) continue;
+		D printf("The winner is %d - %d %d %d %d +correct rotation\n", i, pieces_reference[i & WITHOUT_TAGS].a, pieces_reference[i & WITHOUT_TAGS].b, pieces_reference[i & WITHOUT_TAGS].c, pieces_reference[i & WITHOUT_TAGS].d);
+		buffer[count] = i;
+		count++;
 	}
 	return count;
 }
