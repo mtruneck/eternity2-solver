@@ -178,7 +178,10 @@ int main(int argc, char** argv) {
 	while (1) {
 
                 // This would mean I had become a damn lucky guy
-		if (iterator == 256) break;
+		if (iterator == 256) {
+                    printf("%d\n", max);
+                    break;
+                }
 
                 // Get the next position according to used order
 		int current = order[iterator];
