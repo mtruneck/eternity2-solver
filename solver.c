@@ -49,6 +49,8 @@ unsigned char buffer_counts[BUFFERS];
 // Store the position of the used piece in a buffer
 unsigned char position_of_used_piece_in_buffer[BUFFERS];
 // If there is at least one constraint, 15 is enough
+// Actually, 12 would also be enough, but only in case we alway have 2 sides with constraints.
+// If we wanted to find pieces with only 1 constraint, we'd need 56 (for edges) or 49 for the rest
 #define BUFFERS_LENGTH 15
 unsigned int  buffers[BUFFERS][BUFFERS_LENGTH]; // 15 is empiricaly found sufficient size
 // Used when we want to only check the number of fitting pieces and throw away result
