@@ -244,7 +244,7 @@ int main(int argc, char** argv) {
 			if (iterator > max) {
 				max = iterator;
 				if (max > 190) {
-					fprintf(stderr, "Max:%d\n", max);
+					printf("Max:%d\n", max);
                                         print_board_with_options();
 				}
 			}
@@ -417,7 +417,7 @@ int check_board() {
 	int res = 0;
 
 	for (int i = 0; i < 256; i++) {
-		//if (i%16 == 0) fprintf(stderr, "\n");
+		//if (i%16 == 0) printf("\n");
 		if (board[i] != NULL) {
 			get_constraints(i, &top, &right, &bottom, &left);
 			if ((top != 23 && top != board[i]->a) ||
@@ -426,40 +426,40 @@ int check_board() {
 				(top != 23 && top != board[i]->a)) {
 
 					res = 1;
-					fprintf(stderr, "%d %4d %02d %02d %02d %02d\n", i, board[i]->number, top, right, bottom, left);
-					fprintf(stderr, "%d here %02d %02d %02d %02d\n", i, board[i]->a, board[i]->b, board[i]->c, board[i]->d);
+					printf("%d %4d %02d %02d %02d %02d\n", i, board[i]->number, top, right, bottom, left);
+					printf("%d here %02d %02d %02d %02d\n", i, board[i]->a, board[i]->b, board[i]->c, board[i]->d);
 			}
 		}
 	}
-	fprintf(stderr, "\n");
+	printf("\n");
 	return res;
 }
 
 void print_board() {
 
 	for (int i = 0; i < 256; i++) {
-		if (i%16 == 0) fprintf(stderr, "\n");
+		if (i%16 == 0) printf("\n");
 		if (board[i] != NULL) {
-			fprintf(stderr, "%4d", board[i]->number);
+			printf("%4d", board[i]->number);
 		} else {
-			fprintf(stderr, "  --");
+			printf("  --");
 		}
 	}
-	fprintf(stderr, "\n");
+	printf("\n");
 
 }
 
 void print_board_with_options() {
 
 	for (int i = 0; i < 256; i++) {
-		if (i%16 == 0) fprintf(stderr, "\n");
+		if (i%16 == 0) printf("\n");
 		if (board[i] != NULL) {
-			fprintf(stderr, "%4d", board[i]->number);
+			printf("%4d", board[i]->number);
 		} else {
-			fprintf(stderr, "  --");
+			printf("  --");
 		}
 	}
-	fprintf(stderr, "\n");
+	printf("\n");
 
 	unsigned char top, left, right, bottom;
         unsigned int buffer[250];
@@ -470,12 +470,12 @@ void print_board_with_options() {
                get_constraints(i, &top, &right, &bottom, &left);
                if (top != 23 || right !=23 || bottom != 23 || left != 23) {
                    count = get_fitting_pieces(buffer, top, right,  bottom, left);
-                   printf("For position %d, there are %d options:", i, count);
+                   printf(" Pos %d - %d:", i, count);
                    for (int j = 0; j < count; j++) {
                        printf("%d ", buffer[j] & WITHOUT_TAGS );
                    }
-                   printf("\n");
                }
+               printf("\n");
             }
 	}
 
