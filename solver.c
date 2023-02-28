@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
 			}
 			get_constraints(places_to_check[q], &top, &right, &bottom, &left);
 			// if it's anything to check there
-			if (top != 30 || right != 30 || bottom != 30 || left != 30){
+			if (top != 23 || right != 23 || bottom != 23 || left != 23){
 				D printf("something to check %d \n", places_to_check[q]);
 				count = get_fitting_pieces(fake_buffer, top, right,  bottom, left);
 			} else {
@@ -354,7 +354,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 		if (position < 16) {
 			*top = 0;
 		} else if (board[position -16] == NULL) {
-			*top = 30;
+			*top = 23;
 		} else {
 			*top = board[position-16]->c;
 		}
@@ -362,7 +362,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 		if (position%16 == 0) {
 			*left = 0;
 		} else if (board[position -1] == NULL) {
-			*left = 30;
+			*left = 23;
 		} else {
 			*left = board[position-1]->b;
 		}
@@ -370,7 +370,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 		if (position%16 == 15) {
 			*right = 0;
 		} else if (board[position +1] == NULL) {
-			*right = 30;
+			*right = 23;
 		} else {
 			*right = board[position+1]->d;
 		}
@@ -378,7 +378,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 		if (position > 239) {
 			*bottom = 0;
 		} else if (board[position +16] == NULL) {
-			*bottom = 30;
+			*bottom = 23;
 		} else {
 			*bottom = board[position+16]->a;
 		}
@@ -389,71 +389,65 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
 
-        unsigned char w, x, y, z;
-        if (top == 30)    { w = 23; } else { w = top; }
-        if (right == 30)  { x = 23; } else { x = right; }
-        if (bottom == 30) { y = 23; } else { y = bottom; }
-        if (left == 30)   { z = 23; } else { z = left; }
-
-        for (int p = 0; p < options_lengths[w][x][y][z]; p++) {
-                int i = options[w][x][y][z][p];
+        for (int p = 0; p < options_lengths[top][right][bottom][left]; p++) {
+                int i = options[top][right][bottom][left][p];
 
 		if (pieces[i].used == 1) continue;
 
-		if (left != 30) {
+		if (left != 23) {
 			if (pieces_reference[i].a != left &&
 				pieces_reference[i].b != left &&
 				pieces_reference[i].c != left &&
 				pieces_reference[i].d != left) continue;
 		}
-		if (top != 30) {
+		if (top != 23) {
 			if (pieces_reference[i].a != top &&
 				pieces_reference[i].b != top &&
 				pieces_reference[i].c != top &&
 				pieces_reference[i].d != top) continue;
 		}
-		if (right != 30) {
+		if (right != 23) {
 			if (pieces_reference[i].a != right &&
 				pieces_reference[i].b != right &&
 				pieces_reference[i].c != right &&
 				pieces_reference[i].d != right) continue;
 		}
-		if (bottom != 30) {
+		if (bottom != 23) {
 			if (pieces_reference[i].a != bottom &&
 				pieces_reference[i].b != bottom &&
 				pieces_reference[i].c != bottom &&
 				pieces_reference[i].d != bottom) continue;
 		}
 
-		if ( ( (top    == 30 && pieces_reference[i].a != 0) || pieces_reference[i].a == top   ) &&
-		     ( (right  == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == right ) &&
-		     ( (bottom == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == bottom) &&
-		     ( (left   == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == left) ) {
+		if ( ( (top    == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == top   ) &&
+		     ( (right  == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == right ) &&
+		     ( (bottom == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == bottom) &&
+		     ( (left   == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == left) ) {
 			D printf("The winner is %d - %d %d %d %d +correct rotation\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i;
 			count++;
 		}
 
-		if ( ( (top    == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == top) &&
-		     ( (right  == 30 && pieces_reference[i].a != 0) || pieces_reference[i].a == right) &&
-		     ( (bottom == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == bottom) &&
-		     ( (left   == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == left) ) {
+		if ( ( (top    == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == top) &&
+		     ( (right  == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == right) &&
+		     ( (bottom == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == bottom) &&
+		     ( (left   == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == left) ) {
 			D printf("The winner is %d - %d %d %d %d +left->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i | LEFT_TOP;
 			count++;
 		}
-		if ( ( (top    == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == top) &&
-		     ( (right  == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == right) &&
-		     ( (bottom == 30 && pieces_reference[i].a != 0) || pieces_reference[i].a == bottom) &&
-		     ( (left   == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == left) ) {
+		if ( ( (top    == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == top) &&
+		     ( (right  == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == right) &&
+		     ( (bottom == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == bottom) &&
+		     ( (left   == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == left) ) {
 			D printf("The winner is %d - %d %d %d %d +bottom->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i | BOTTOM_TOP;
 			count++;
 		}
-		if ( ( (top    == 30 && pieces_reference[i].b != 0) || pieces_reference[i].b == top) &&
-		     ( (right  == 30 && pieces_reference[i].c != 0) || pieces_reference[i].c == right) &&
-		     ( (bottom == 30 && pieces_reference[i].d != 0) || pieces_reference[i].d == bottom) &&
-		     ( (left   == 30 && pieces_reference[i].a != 0) || pieces_reference[i].a == left) ) {
+		if ( ( (top    == 23 && pieces_reference[i].b != 0) || pieces_reference[i].b == top) &&
+		     ( (right  == 23 && pieces_reference[i].c != 0) || pieces_reference[i].c == right) &&
+		     ( (bottom == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == bottom) &&
+		     ( (left   == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == left) ) {
 			D printf("The winner is %d - %d %d %d %d +right->top\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i | RIGHT_TOP;
 			count++;
@@ -483,10 +477,10 @@ int check_board() {
 		//if (i%16 == 0) fprintf(stderr, "\n");
 		if (board[i] != NULL) {
 			get_constraints(i, &top, &right, &bottom, &left);
-			if ((top != 30 && top != board[i]->a) ||
-				(top != 30 && top != board[i]->a) ||
-				(top != 30 && top != board[i]->a) ||
-				(top != 30 && top != board[i]->a)) {
+			if ((top != 23 && top != board[i]->a) ||
+				(top != 23 && top != board[i]->a) ||
+				(top != 23 && top != board[i]->a) ||
+				(top != 23 && top != board[i]->a)) {
 
 					res = 1;
 					fprintf(stderr, "%d %4d %02d %02d %02d %02d\n", i, board[i]->number, top, right, bottom, left);
@@ -531,7 +525,7 @@ void print_board_with_options() {
 	for (int i = 0; i < 256; i++) {
             if (board[i] == NULL) {
                get_constraints(i, &top, &right, &bottom, &left);
-               if (top != 30 || right !=30 || bottom != 30 || left != 30) {
+               if (top != 23 || right !=23 || bottom != 23 || left != 23) {
                    count = get_fitting_pieces(buffer, top, right,  bottom, left);
                    printf("For position %d, there are %d options:", i, count);
                    for (int j = 0; j < count; j++) {
