@@ -202,9 +202,7 @@ int main(int argc, char** argv) {
 			D printf("Top: %d Right: %d Bottom: %d Left: %d \n", top, right, bottom, left);
 
 			// Find fitting pieces for current position
-			unsigned char count;
-			count = get_fitting_pieces(buffers[current_buffer], top, right,  bottom, left);
-			buffer_counts[current_buffer] = count;
+			buffer_counts[current_buffer] = get_fitting_pieces(buffers[current_buffer], top, right,  bottom, left);
 		}
 
 		D printf( "The length of the current buffer is  %d\n", buffer_counts[current_buffer]);
