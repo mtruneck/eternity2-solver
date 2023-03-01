@@ -96,6 +96,8 @@ void print_buffers();
 // Nicely print the current state of the board
 void print_board();
 
+void count_fitting_edges();
+
 // Print the board and also options for the unfilled positions
 void print_board_with_options();
 
@@ -343,6 +345,7 @@ int main(int argc, char** argv) {
 	} // End of while(1) - iterating over the places on board
 
         print_board();
+        //count_fitting_edges();
         res = check_board();
 
 	return res;
@@ -435,6 +438,21 @@ int check_board() {
 	}
 	printf("\n");
 	return res;
+}
+
+void count_fitting_edges() {
+
+        int edges = 0;
+	for (int i = 0; i < 256; i++) {
+		if (board[i] != NULL && i%16 != 15 && board[i+1] != NULL ) {
+			if (board[i] -> b == board[i+1] -> d) edges++;
+		}
+		if (board[i] != NULL && i < 240 && board[i+16] != NULL ) {
+			if (board[i] -> c == board[i+16] -> a) edges++;
+		}
+	}
+	printf("Edges: %d \n", edges);
+
 }
 
 void print_board() {
