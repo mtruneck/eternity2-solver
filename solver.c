@@ -242,6 +242,11 @@ int main(int argc, char** argv) {
 		// End loop if no further option is posible
 		if (buffer_counts[current_buffer] == 0 || force_fallback_flag) {
 
+                    /* OUTPUT FOR GRAPHING - every fallback, print the current position
+                    fprintf(stderr, "%d %d\n", number_of_fallbacks, iterator);
+                    print_board_with_options();
+                    */
+
 		    // if (! fallback_flag) { printf("local max: %d\n", iterator); }
 
 			// Print out the current max solution
@@ -249,7 +254,7 @@ int main(int argc, char** argv) {
 				max = iterator;
 				if (max > 190) {
 					printf("Max:%d\n", max);
-                                        print_board_with_options();
+					print_board_with_options();
 				}
 			}
 
