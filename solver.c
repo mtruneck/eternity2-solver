@@ -495,12 +495,11 @@ void print_board_with_options() {
                get_constraints(i, &top, &right, &bottom, &left);
                if (top != 23 || right !=23 || bottom != 23 || left != 23) {
                    count = get_fitting_pieces(buffer, top, right,  bottom, left);
-                   printf(" Pos %d - %d:", i, count);
+                   printf(" Pos %d - %d:\n", i, count);
                    for (int j = 0; j < count; j++) {
                        printf("%d ", buffer[j] & WITHOUT_TAGS );
                    }
                }
-               printf("\n");
             }
 	}
 
