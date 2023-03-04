@@ -489,7 +489,7 @@ char translate[] = "aihgfedcbqponmlkjwvutsr";
         printf("&board_pieces=");
 	for (int i = 0; i < 256; i++) {
 		if (board[i] != NULL) {
-			printf("%03d", board[i]->number);
+			printf("%03d", board[i]->number+1);
 		} else {
 			printf("000");
 		}
