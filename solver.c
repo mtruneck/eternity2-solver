@@ -100,6 +100,7 @@ void count_fitting_edges();
 
 // Print the board and also options for the unfilled positions
 void print_board_with_options();
+void print_board_in_e2bucas_format();
 
 // Check if the board has met all constraints (basically that
 // there is no stupid error in the code)
@@ -350,6 +351,9 @@ int main(int argc, char** argv) {
 	} // End of while(1) - iterating over the places on board
 
         print_board();
+        count_fitting_edges();
+        print_board_in_e2bucas_format();
+
         //count_fitting_edges();
         res = check_board();
 
@@ -456,7 +460,35 @@ void count_fitting_edges() {
 			if (board[i] -> c == board[i+16] -> a) edges++;
 		}
 	}
-	printf("Edges: %d \n", edges);
+	printf("Score: %d \n", edges);
+
+}
+
+void print_board_in_e2bucas_format() {
+
+char translate[] = "aihgfedcbqponmlkjwvutsr";
+
+        printf("https://e2.bucas.name/#custom&board_w=16&board_h=16&board_edges=");
+        for (int i = 0; i < 256; i++) {
+		if (board[i] != NULL) {
+			printf("%c%c%c%c",
+                                    translate[board[i]->a],
+                                    translate[board[i]->b],
+                                    translate[board[i]->c],
+                                    translate[board[i]->d]);
+		} else {
+			printf("aaaa");
+		}
+	}
+        printf("&board_pieces=");
+	for (int i = 0; i < 256; i++) {
+		if (board[i] != NULL) {
+			printf("%03d", board[i]->number);
+		} else {
+			printf("000");
+		}
+	}
+	printf("&motifs_order=jef\n");
 
 }
 
