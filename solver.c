@@ -259,6 +259,8 @@ int main(int argc, char** argv) {
 				max = iterator;
 				if (max > 190) {
 					printf("Max:%d\n", max);
+                                        count_fitting_edges();
+                                        print_board_in_e2bucas_format();
 					print_board_with_options();
 				}
 			}
