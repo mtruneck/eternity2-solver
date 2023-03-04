@@ -188,6 +188,10 @@ int main(int argc, char** argv) {
                     break;
                 }
 
+		if (iterator > 220) {
+                    print_board();
+                }
+
                 // Get the next position according to used order
 		int current = order[iterator];
 
