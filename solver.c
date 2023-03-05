@@ -58,7 +58,7 @@ unsigned int  fake_buffer[255];
 
 // Declarations regarding fallbacks
 // How many fallbacks before giving up :)
-#define FALLBACKS 1000
+#define FALLBACKS 1000000
 unsigned int number_of_fallbacks = 0;
 unsigned char fallback_flag = 0;
 
