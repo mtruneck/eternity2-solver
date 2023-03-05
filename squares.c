@@ -18,6 +18,12 @@
 #define LEFT_TOP 4096
 #define WITHOUT_TAGS 0b11111111
 
+#define SQ_TOP_TOP      0b1000000000000000
+#define SQ_RIGHT_TOP    0b0100000000000000
+#define SQ_BOTTOM_TOP   0b0010000000000000
+#define SQ_LEFT_TOP     0b0001000000000000
+#define SQ_WITHOUT_TAGS 0b0000111111111111
+
 // Maximum reached position
 int max = 0;
 
@@ -40,18 +46,39 @@ piece pieces_reference[256];
 //Board - Array of pointers to the pieces
 piece * board[256];
 
+// Definition of one square - numbers of pieces with rotation tags
+/*   _______
+    | a | b |
+    |-------
+    | c | d |
+     -------
+*/
+typedef struct {
+		unsigned short a;
+		unsigned short b;
+		unsigned short c;
+		unsigned short d;
+} square;
+
+square squares[4000000];
+int square_count = 0;
+unsigned short square_options[289][289][1000];
+unsigned short square_options_lengths[289][289];
+
+unsigned short get_square_color(unsigned char a, unsigned char b);
+
 // Declaration of buffers (arrays of fitting pieces for the particular position)
 // Each piece is identified by its number and rotation tag/mask (TOP_TOP/RIGHT_TOP,etc.)
 #define BUFFERS 256
 unsigned char current_buffer = 0;
 // Lengths of each buffer
-unsigned char buffer_counts[BUFFERS];
+unsigned int buffer_counts[BUFFERS];
 // Store the position of the used piece in a buffer
 unsigned char position_of_used_piece_in_buffer[BUFFERS];
 // If there is at least one constraint, 15 is enough
 // Actually, 12 would also be enough, but only in case we alway have 2 sides with constraints.
 // If we wanted to find pieces with only 1 constraint, we'd need 56 (for edges) or 49 for the rest
-#define BUFFERS_LENGTH 255
+#define BUFFERS_LENGTH 800
 unsigned int  buffers[BUFFERS][BUFFERS_LENGTH]; // 15 is empiricaly found sufficient size
 // Used when we want to only check the number of fitting pieces and throw away result
 unsigned int  fake_buffer[255];
@@ -62,7 +89,7 @@ unsigned int  fake_buffer[255];
 unsigned int number_of_fallbacks = 0;
 unsigned char fallback_flag = 0;
 
-int order[256] = {20, 21, 36, 37, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255};
+int order[256] = {20, 21, 36, 37, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255};
 
 ////////////////////////////////////////////////////////////////////////////////
 /////////////////////// Functions declarations /////////////////////////////////
@@ -73,7 +100,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 
 // According to the given colors, store fitting pieces in buffer
 // and return the number of them
-unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
+unsigned int get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
 
 // Nicely print the current state of the board
 void print_board();
@@ -107,6 +134,11 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < BUFFERS; i++) {
 		for (int j = 0; j < BUFFERS_LENGTH; j++) {
 			buffers[i][j] = 300;
+		}
+	}
+	for (int i = 0; i < 289; i++) {
+		for (int j = 0; j < 289; j++) {
+			square_options_lengths[i][j] = 0;
 		}
 	}
 
@@ -173,17 +205,17 @@ int main(int argc, char** argv) {
 			for (int i = 0; i < 4; i++) {
 
 				if (square_log[i] & RIGHT_TOP) {
-					printf("r%d", square_log[i] & WITHOUT_TAGS);
+					D printf("r%d", square_log[i] & WITHOUT_TAGS);
 				} else if (square_log[i] & BOTTOM_TOP ) {
-					printf("b%d", square_log[i] & WITHOUT_TAGS);
+					D printf("b%d", square_log[i] & WITHOUT_TAGS);
 				} else if (square_log[i] & LEFT_TOP ) {
-					printf("l%d", square_log[i] & WITHOUT_TAGS);
+					D printf("l%d", square_log[i] & WITHOUT_TAGS);
 				} else {
-					printf("n%d", square_log[i] & WITHOUT_TAGS);
+					D printf("n%d", square_log[i] & WITHOUT_TAGS);
 				}
 
 			}
-			printf(" %c%c%c%c%c%c%c%c",
+			D printf(" %c%c-%c%c-%c%c-%c%c",
                                     translate[board[20]->a],
                                     translate[board[21]->a],
                                     translate[board[21]->b],
@@ -193,7 +225,39 @@ int main(int argc, char** argv) {
                                     translate[board[20]->d],
                                     translate[board[36]->d]);
 
-			printf("\n");
+			D printf("\n");
+			squares[square_count].a = square_log[0];
+			squares[square_count].b = square_log[1];
+			squares[square_count].c = square_log[2];
+			squares[square_count].d = square_log[3];
+			D printf("Square count: %d\n", square_count);
+
+			unsigned short s_top, s_right;
+			s_top = get_square_color(board[20]->a, board[21]->a);
+			s_right = get_square_color(board[21]->b, board[37]->b);
+
+			square_options[s_top][s_right][square_options_lengths[s_top][s_right]] = square_count;
+			square_options_lengths[s_top][s_right]++;
+
+			s_top = get_square_color(board[21]->b, board[37]->b);
+			s_right = get_square_color(board[37]->c, board[36]->c);
+
+			//square_options[s_top][s_right][square_options_lengths[s_top][s_right]] = square_count | SQ_RIGHT_TOP;
+			//square_options_lengths[s_top][s_right]++;
+
+			//s_top = get_square_color(board[37]->c, board[36]->c);
+			//s_right = get_square_color(board[36]->d, board[20]->d);
+
+			//square_options[s_top][s_right][square_options_lengths[s_top][s_right]] = square_count | SQ_BOTTOM_TOP;
+			//square_options_lengths[s_top][s_right]++;
+
+			//s_top = get_square_color(board[36]->d, board[20]->d);
+			//s_right = get_square_color(board[20]->a, board[21]->a);
+
+			//square_options[s_top][s_right][square_options_lengths[s_top][s_right]] = square_count | SQ_LEFT_TOP;
+			//square_options_lengths[s_top][s_right]++;
+
+			square_count++;
                 }
 
                 // Get the next position according to used order
@@ -208,7 +272,7 @@ int main(int argc, char** argv) {
 		D printf("------Position %d-------Buffer: %d------Iterator: %d---\n", current, current_buffer, iterator);
 
                 // If it is not fallback, get list of fitting pieces (otherwise it's already filled)
-		if (! fallback_flag && iterator != 42) {
+		if (! fallback_flag) {
 
 			// Find the constrains for current position
 			get_constraints(current, &top, &right, &bottom, &left);
@@ -219,6 +283,10 @@ int main(int argc, char** argv) {
 		}
 
 		D printf( "The length of the current buffer is  %d\n", buffer_counts[current_buffer]);
+		//for (int x = 0; x < buffer_counts[current_buffer]; x++) {
+			//printf("%d ", buffers[current_buffer][x] & WITHOUT_TAGS);
+		//}
+		//printf("\n");
 
 		// Check if I have still pieces for special positions
                 // This makes sense only in case of the order filling the frame first and then going by lines
@@ -253,6 +321,19 @@ int main(int argc, char** argv) {
 
 		    if (iterator == 0) {
 			printf("This is the end!\n");
+				for (int i = 0; i < 289; i++) {
+					for (int j = 0; j < 289; j++) {
+						printf("%d %d: ", i, j);
+						for (int k = 0; k < square_options_lengths[i][j]; k++) {
+							printf("%d ", square_options[i][j][k]);
+						}
+						printf("\n");
+					}
+				}
+				for (int i = 0; i < square_count; i++) {
+					printf("%d: %d, %d, %d, %d\n", i, squares[i].a, squares[i].b, squares[i].c, squares[i].d);
+				}
+			
 			    break;
 		    }
 
@@ -317,7 +398,7 @@ int main(int argc, char** argv) {
 		fallback_flag = 0;
 
 		// Select random piece from buffer
-		unsigned char chosen = rand() % buffer_counts[current_buffer];
+		unsigned char chosen = 0;
 		unsigned int  number = buffers[current_buffer][chosen];
 		unsigned char winner = buffers[current_buffer][chosen & WITHOUT_TAGS];
                 position_of_used_piece_in_buffer[current_buffer] = chosen;
@@ -407,7 +488,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 }
 
 
-unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
+unsigned int get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
 
 	for (int i = 0; i <256; i++) {
@@ -446,9 +527,7 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 			D printf("Vyhral dilek cislo %d - %d %d %d %d +correct rotation\n", i, pieces_reference[i].a, pieces_reference[i].b, pieces_reference[i].c, pieces_reference[i].d);
 			buffer[count] = i;
 			count++;
-			// the first piece only in one rotation
 		}
-			if (iterator == 1) continue;
 
 		if ( ( (top    == 23 && pieces_reference[i].d != 0) || pieces_reference[i].d == top) &&
 		     ( (right  == 23 && pieces_reference[i].a != 0) || pieces_reference[i].a == right) &&
@@ -474,8 +553,53 @@ unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, 
 			buffer[count] = i | RIGHT_TOP;
 			count++;
 		}
+		D printf("Current counter is %d\n", count);
 	}
 	return count;
+}
+
+unsigned short get_square_color(unsigned char a, unsigned char b){
+	unsigned char left, right;
+	switch (a) {
+		case 22:
+			left = 0;
+			break;
+		case 21:
+			left = 1;
+			break;
+		case 20:
+			left = 5;
+			break;
+		case 19:
+			left = 9;
+			break;
+		case 18:
+			left = 13;
+			break;
+		default:
+			left = a;
+	}
+	switch (b) {
+		case 22:
+			right = 0;
+			break;
+		case 21:
+			right = 1;
+			break;
+		case 20:
+			right = 5;
+			break;
+		case 19:
+			right = 9;
+			break;
+		case 18:
+			right = 13;
+			break;
+		default:
+			right = b;
+	}
+	return (left*17)+right;
+
 }
 
 void print_board_in_e2bucas_format() {
