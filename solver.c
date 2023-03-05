@@ -58,7 +58,7 @@ unsigned int  fake_buffer[255];
 
 // Declarations regarding fallbacks
 // How many fallbacks before giving up :)
-#define FALLBACKS 1000000
+#define FALLBACKS 1000
 unsigned int number_of_fallbacks = 0;
 unsigned char fallback_flag = 0;
 
@@ -90,6 +90,8 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 // and return the number of them
 unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
 
+void get_random_corner_from_file(char corner, unsigned int *corner_pieces);
+
 // Debug function to print buffers, not used in prod
 void print_buffers();
 
@@ -108,6 +110,8 @@ int check_board();
 
 int options[24][24][24][24][256];
 int options_lengths[24][24][24][24];
+
+unsigned int corner_pieces[8];
 
 int main(int argc, char** argv) {
 
@@ -199,6 +203,71 @@ int main(int argc, char** argv) {
 		if (current == 34 || current == 45 || current == 135 || current == 210 || current == 221) {
 				iterator++;
 				continue;
+		}
+
+		// Beware - this is highly dependant on the right order!!
+		if (current == 0 || current == 15 || current == 240 || current == 255) {
+			char corner;
+			if (current == 0) {
+				corner = 0;
+			} else if (current == 15) {
+				corner = 1;
+			} else if (current == 240) {
+				corner = 2;
+			} else if (current == 255) {
+				corner = 3;
+			}
+			D printf("Going to fill corner %d!\n", corner);
+
+        		get_random_corner_from_file(corner, corner_pieces);
+			for (int c = 0; c < 8; c++) {
+				//print_board_in_e2bucas_format();
+
+				unsigned int  number = corner_pieces[c];
+				unsigned char winner = number & WITHOUT_TAGS;
+				D printf("Number: %d, piece: %d for position %d\n", number, winner, current);
+
+				// Get piece from referential array with correct rotation
+				if (number & RIGHT_TOP) {
+					pieces[winner].a = pieces_reference[winner].b;
+					pieces[winner].b = pieces_reference[winner].c;
+					pieces[winner].c = pieces_reference[winner].d;
+					pieces[winner].d = pieces_reference[winner].a;
+					D printf("right - top\n");
+				} else if (number & BOTTOM_TOP ) {
+					pieces[winner].a = pieces_reference[winner].c;
+					pieces[winner].c = pieces_reference[winner].a;
+					pieces[winner].b = pieces_reference[winner].d;
+					pieces[winner].d = pieces_reference[winner].b;
+					D printf("bottom - top\n");
+				} else if (number & LEFT_TOP ) {
+					pieces[winner].a = pieces_reference[winner].d;
+					pieces[winner].d = pieces_reference[winner].c;
+					pieces[winner].c = pieces_reference[winner].b;
+					pieces[winner].b = pieces_reference[winner].a;
+					D printf("left - top\n");
+				} else {
+					pieces[winner].a = pieces_reference[winner].a;
+					pieces[winner].b = pieces_reference[winner].b;
+					pieces[winner].c = pieces_reference[winner].c;
+					pieces[winner].d = pieces_reference[winner].d;
+					D printf("top - top\n");
+				}
+
+				board[current] = &pieces[winner];
+				pieces[winner].used = 1;
+
+				D printf("Colors of the currently picked piece num. %d : %d %d %d %d\n", board[current]->number, board[current]->a, board[current]->b, board[current]->c, board[current]->d);
+
+				// Move pointer to the next buffer
+				current_buffer = current_buffer+1;
+
+				iterator++;
+		                current = order[iterator];
+
+			}
+			D print_board_in_e2bucas_format();
+			continue;
 		}
 
 		D printf("------Position %d-------Buffer: %d------Iterator: %d---\n", current, current_buffer, iterator);
@@ -468,6 +537,88 @@ void count_fitting_edges() {
 	}
 	printf("Score: %d \n", edges);
 
+}
+
+void get_random_corner_from_file(char corner, unsigned int *corner_pieces) {
+	// Load corner pieces combinations from files
+	// corner - 0=top-left 1=top-right 2=bottom-left 3=bottom-right
+	FILE* input;
+	int length;
+	if (corner == 0 ){
+		input = fopen("top-left-corners", "r");
+		length = 3084;
+	} else if (corner == 1) {
+		input = fopen("top-right-corners", "r");
+		length = 3782;
+	} else if (corner == 2) {
+		input = fopen("bottom-left-corners", "r");
+		length = 3195;
+	} else {
+		input = fopen("bottom-right-corners", "r");
+		length = 2897;
+	}
+	long int a, b, c, d, e, f, g, h;
+
+        // Initialize the random number generator
+	struct timespec spec;
+	clock_gettime(CLOCK_REALTIME, &spec);
+	srand (spec.tv_sec + spec.tv_nsec);
+
+	unsigned int chosen;
+	char success = 0;
+	int counter;
+	char is_used;
+	while (1) {
+		chosen = rand() % length;
+		D printf("%d - length: %d chosen: %d\n", corner, length, chosen);
+		counter = 0;
+		while (1) {
+			is_used = 0;
+			if (fscanf(input, "%lu%lu%lu%lu%lu%lu%lu%lu", &a, &b, &c, &d, &e, &f, &g, &h) != EOF) {
+				D printf(".");
+				if (counter == chosen) {
+					D printf("Found the chosen one!");
+					corner_pieces[0] = a;
+					corner_pieces[1] = b;
+					corner_pieces[2] = c;
+					corner_pieces[3] = d;
+					corner_pieces[4] = e;
+					corner_pieces[5] = f;
+					corner_pieces[6] = g;
+					corner_pieces[7] = h;
+					for (int q = 0; q < 8; q++){
+						D printf("checking piece %d is used - %d\n", corner_pieces[q] & WITHOUT_TAGS, pieces[corner_pieces[q] & WITHOUT_TAGS].used);
+						if (pieces[corner_pieces[q] & WITHOUT_TAGS].used == 1) is_used++;
+						D printf("Current state of is_used: %d", is_used);
+					}
+					if (is_used > 0) {
+						D printf("Used - going again!\n");
+						break;
+					} else {
+						success = 1;
+						D printf("Success!\n");
+						break;
+					}
+				}
+			} else {
+				D printf("Hit EOF!\n");
+				break;
+			}
+			counter++;
+		}
+		if (success) {
+			fclose(input);
+			D printf("Closing file!\n");
+			break;
+		} else {
+			int position;
+			position = ftell(input);
+			D printf("Rewinding the input - position: %d\n", position);
+			rewind(input);
+			position = ftell(input);
+			D printf("Rewinding the input - position: %d\n", position);
+		}
+	}
 }
 
 void print_board_in_e2bucas_format() {
