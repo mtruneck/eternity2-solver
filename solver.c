@@ -75,13 +75,13 @@ int places_to_check[12] = {17, 18, 33, 29, 30, 46, 209, 225, 226, 222, 237, 238}
 ////////////////////////////////////////////////////////////////////////////////
 
 // Fill the arguments with according colors needed at given position
-void get_constraints(int position, unsigned char *top, unsigned char *right, unsigned char *bottom, unsigned char *left);
+void get_constraints(piece **board, int position, unsigned char *top, unsigned char *right, unsigned char *bottom, unsigned char *left);
 
 // According to the given colors, store fitting pieces in buffer
 // and return the number of them
-unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
+unsigned char get_fitting_pieces(piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
 
-void get_random_corner_from_file(char corner, unsigned int *corner_pieces);
+void get_random_corner_from_file(piece *pieces, char corner, unsigned int *corner_pieces);
 
 // Debug function to print buffers, not used in prod
 void print_buffers();
@@ -89,15 +89,15 @@ void print_buffers();
 // Nicely print the current state of the board
 void print_board(piece **board);
 
-void count_fitting_edges();
+void count_fitting_edges(piece **board);
 
 // Print the board and also options for the unfilled positions
-void print_board_with_options();
-void print_board_in_e2bucas_format();
+void print_board_with_options(piece **board, piece *pieces);
+void print_board_in_e2bucas_format(piece **board);
 
 // Check if the board has met all constraints (basically that
 // there is no stupid error in the code)
-int check_board();
+int check_board(piece **board);
 
 int options[24][24][24][24][256];
 int options_lengths[24][24][24][24];
@@ -219,9 +219,9 @@ int main(int argc, char** argv) {
 			}
 			D printf("Going to fill corner %d!\n", corner);
 
-        		get_random_corner_from_file(corner, corner_pieces);
+        		get_random_corner_from_file(pieces, corner, corner_pieces);
 			for (int c = 0; c < 8; c++) {
-				//print_board_in_e2bucas_format();
+				//print_board_in_e2bucas_format(board);
 
 				unsigned int  number = corner_pieces[c];
 				unsigned char winner = number & WITHOUT_TAGS;
@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
 		                current = order[iterator];
 
 			}
-			D print_board_in_e2bucas_format();
+			D print_board_in_e2bucas_format(board);
 			continue;
 		}
 
@@ -276,11 +276,11 @@ int main(int argc, char** argv) {
 		if (! fallback_flag) {
 
 			// Find the constrains for current position
-			get_constraints(current, &top, &right, &bottom, &left);
+			get_constraints(board, current, &top, &right, &bottom, &left);
 			D printf("Top: %d Right: %d Bottom: %d Left: %d \n", top, right, bottom, left);
 
 			// Find fitting pieces for current position
-			buffer_counts[current_buffer] = get_fitting_pieces(buffers[current_buffer], top, right,  bottom, left);
+			buffer_counts[current_buffer] = get_fitting_pieces(pieces, buffers[current_buffer], top, right,  bottom, left);
 		}
 
 		D printf( "The length of the current buffer is  %d\n", buffer_counts[current_buffer]);
@@ -295,11 +295,11 @@ int main(int argc, char** argv) {
 			if (board[places_to_check[q]] != NULL) {
 				continue;
 			}
-			get_constraints(places_to_check[q], &top, &right, &bottom, &left);
+			get_constraints(board, places_to_check[q], &top, &right, &bottom, &left);
 			// if it's anything to check there
 			if (top != 23 || right != 23 || bottom != 23 || left != 23){
 				D printf("something to check %d \n", places_to_check[q]);
-				count = get_fitting_pieces(fake_buffer, top, right,  bottom, left);
+				count = get_fitting_pieces(pieces, fake_buffer, top, right,  bottom, left);
 			} else {
 				continue;
 			}
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
 
                     /* OUTPUT FOR GRAPHING - every fallback, print the current position
                     fprintf(stderr, "%d %d\n", number_of_fallbacks, iterator);
-                    print_board_with_options();
+                    print_board_with_options(board, pieces);
                     */
 
 		    // if (! fallback_flag) { printf("local max: %d\n", iterator); }
@@ -328,9 +328,9 @@ int main(int argc, char** argv) {
 				max = iterator;
 				if (max > 190) {
 					printf("Max:%d\n", max);
-                                        count_fitting_edges();
-                                        print_board_in_e2bucas_format();
-					print_board_with_options();
+                                        count_fitting_edges(board);
+                                        print_board_in_e2bucas_format(board);
+					print_board_with_options(board, pieces);
 				}
 			}
 
@@ -426,17 +426,17 @@ int main(int argc, char** argv) {
 	} // End of while(1) - iterating over the places on board
 
         print_board(board);
-        count_fitting_edges();
-        print_board_in_e2bucas_format();
+        count_fitting_edges(board);
+        print_board_in_e2bucas_format(board);
 
         //count_fitting_edges();
-        res = check_board();
+        res = check_board(board);
 
 	return res;
 } // End of main()
 
 // Fill the arguments with according colors needed at given position
-void get_constraints(int position, unsigned char *top, unsigned char *right, unsigned char *bottom, unsigned char *left) {
+void get_constraints(piece **board, int position, unsigned char *top, unsigned char *right, unsigned char *bottom, unsigned char *left) {
 
 		if (position < 16) {
 			*top = 0;
@@ -473,7 +473,7 @@ void get_constraints(int position, unsigned char *top, unsigned char *right, uns
 }
 
 // According to the given colors, store fitting pieces in buffer and return the number of them
-unsigned char get_fitting_pieces(unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
+unsigned char get_fitting_pieces(piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
 
         D printf("Going to get fitting pieces for %d %d %d %d - length of options: %d\n", top, right, bottom, left, options_lengths[top][right][bottom][left]);
@@ -500,7 +500,7 @@ void print_buffers() {
 	}
 }
 
-int check_board() {
+int check_board(piece **board) {
 
 	unsigned char top, left, right, bottom;
 	int res = 0;
@@ -508,7 +508,7 @@ int check_board() {
 	for (int i = 0; i < 256; i++) {
 		//if (i%16 == 0) printf("\n");
 		if (board[i] != NULL) {
-			get_constraints(i, &top, &right, &bottom, &left);
+			get_constraints(board, i, &top, &right, &bottom, &left);
 			if ((top != 23 && top != board[i]->a) ||
 				(top != 23 && top != board[i]->a) ||
 				(top != 23 && top != board[i]->a) ||
@@ -524,7 +524,7 @@ int check_board() {
 	return res;
 }
 
-void count_fitting_edges() {
+void count_fitting_edges(piece **board) {
 
         int edges = 0;
 	for (int i = 0; i < 256; i++) {
@@ -539,7 +539,7 @@ void count_fitting_edges() {
 
 }
 
-void get_random_corner_from_file(char corner, unsigned int *corner_pieces) {
+void get_random_corner_from_file(piece *pieces, char corner, unsigned int *corner_pieces) {
 	// Load corner pieces combinations from files
 	// corner - 0=top-left 1=top-right 2=bottom-left 3=bottom-right
 	FILE* input;
@@ -621,7 +621,7 @@ void get_random_corner_from_file(char corner, unsigned int *corner_pieces) {
 	}
 }
 
-void print_board_in_e2bucas_format() {
+void print_board_in_e2bucas_format(piece **board) {
 
 char translate[] = "aihgfedcbqponmlkjwvutsr";
 
@@ -663,7 +663,7 @@ void print_board(piece **board) {
 
 }
 
-void print_board_with_options() {
+void print_board_with_options(piece **board, piece *pieces) {
 
 	for (int i = 0; i < 256; i++) {
 		if (i%16 == 0) printf("\n");
@@ -681,9 +681,9 @@ void print_board_with_options() {
 
 	for (int i = 0; i < 256; i++) {
             if (board[i] == NULL) {
-               get_constraints(i, &top, &right, &bottom, &left);
+               get_constraints(board, i, &top, &right, &bottom, &left);
                if (top != 23 || right !=23 || bottom != 23 || left != 23) {
-                   count = get_fitting_pieces(buffer, top, right,  bottom, left);
+                   count = get_fitting_pieces(pieces, buffer, top, right,  bottom, left);
                    printf(" Pos %d - %d:\n", i, count);
                    for (int j = 0; j < count; j++) {
                        printf("%d ", buffer[j] & WITHOUT_TAGS );
