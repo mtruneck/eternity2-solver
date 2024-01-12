@@ -18,9 +18,6 @@
 #define LEFT_TOP 4096
 #define WITHOUT_TAGS 0b11111111
 
-// Maximum reached position
-int max = 0;
-
 // Definition of one piece
 typedef struct {
 		unsigned char number;
@@ -31,14 +28,8 @@ typedef struct {
 		unsigned char d;
 } piece;
 
-// Array of all pieces rotated according the the current solution
-piece pieces[256];
-
 // Referential array of pieces to keep original rotation
 piece pieces_reference[256];
-
-//Board - Array of pointers to the pieces
-piece * board[256];
 
 // Declaration of buffers (arrays of fitting pieces for the particular position)
 // Each piece is identified by its number and rotation tag/mask (TOP_TOP/RIGHT_TOP,etc.)
@@ -96,7 +87,7 @@ void get_random_corner_from_file(char corner, unsigned int *corner_pieces);
 void print_buffers();
 
 // Nicely print the current state of the board
-void print_board();
+void print_board(piece **board);
 
 void count_fitting_edges();
 
@@ -115,28 +106,8 @@ unsigned int corner_pieces[8];
 
 int main(int argc, char** argv) {
 
-	// for return code
-	int res;
-
-#include "precomputed-options-array.c"
-
-        // Initialize the random number generator
-	struct timespec spec;
-	clock_gettime(CLOCK_REALTIME, &spec);
-	srand (spec.tv_sec + spec.tv_nsec);
-
-	// General initialization of arrays
-	for (int i = 0; i <256; i++) {
-		board[i] = NULL;
-	}
-	for (int i = 0; i < BUFFERS; i++) {
-		buffer_counts[i] = 0;
-	}
-	for (int i = 0; i < BUFFERS; i++) {
-		for (int j = 0; j < BUFFERS_LENGTH; j++) {
-			buffers[i][j] = 300;
-		}
-	}
+	// Array of all pieces rotated according the the current solution
+	piece pieces[256];
 
 	// Load pieces from file
 	FILE* input;
@@ -164,6 +135,32 @@ int main(int argc, char** argv) {
 	}
 	fclose(input);
 
+	// for return code
+	int res;
+
+#include "precomputed-options-array.c"
+
+        // Initialize the random number generator
+	struct timespec spec;
+	clock_gettime(CLOCK_REALTIME, &spec);
+	srand (spec.tv_sec + spec.tv_nsec);
+
+	//Board - Array of pointers to the pieces
+	piece * board[256];
+
+	// General initialization of arrays
+	for (int i = 0; i <256; i++) {
+		board[i] = NULL;
+	}
+	for (int i = 0; i < BUFFERS; i++) {
+		buffer_counts[i] = 0;
+	}
+	for (int i = 0; i < BUFFERS; i++) {
+		for (int j = 0; j < BUFFERS_LENGTH; j++) {
+			buffers[i][j] = 300;
+		}
+	}
+
 	// Put start piece and hint pieces to the right places
 	// Keep in mind indexes start with zero!
 	// Proper rotation was prepared in the pieces source file not to bother with it here
@@ -181,6 +178,9 @@ int main(int argc, char** argv) {
 	// Parameters for appropriate piece
 	unsigned char top, left, right, bottom;
 
+	// Maximum reached position
+	int max = 0;
+
 	//  Loop over current position on board to be solved
 	int iterator = 0;
 	int force_fallback_flag;
@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
                 }
 
 		if (iterator > 220) {
-                    print_board();
+                    print_board(board);
                 }
 
                 // Get the next position according to used order
@@ -425,7 +425,7 @@ int main(int argc, char** argv) {
 		iterator++;
 	} // End of while(1) - iterating over the places on board
 
-        print_board();
+        print_board(board);
         count_fitting_edges();
         print_board_in_e2bucas_format();
 
@@ -649,7 +649,7 @@ char translate[] = "aihgfedcbqponmlkjwvutsr";
 
 }
 
-void print_board() {
+void print_board(piece **board) {
 
 	for (int i = 0; i < 256; i++) {
 		if (i%16 == 0) printf("\n");
