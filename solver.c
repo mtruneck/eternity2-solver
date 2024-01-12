@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -31,33 +32,13 @@ typedef struct {
 // Referential array of pieces to keep original rotation
 piece pieces_reference[256];
 
-// Declaration of buffers (arrays of fitting pieces for the particular position)
-// Each piece is identified by its number and rotation tag/mask (TOP_TOP/RIGHT_TOP,etc.)
-#define BUFFERS 256
-unsigned char current_buffer = 0;
-// Lengths of each buffer
-unsigned char buffer_counts[BUFFERS];
-// Store the position of the used piece in a buffer
-unsigned char position_of_used_piece_in_buffer[BUFFERS];
-// If there is at least one constraint, 15 is enough
-// Actually, 12 would also be enough, but only in case we alway have 2 sides with constraints.
-// If we wanted to find pieces with only 1 constraint, we'd need 56 (for edges) or 49 for the rest
-#define BUFFERS_LENGTH 15
-unsigned int  buffers[BUFFERS][BUFFERS_LENGTH]; // 15 is empiricaly found sufficient size
-// Used when we want to only check the number of fitting pieces and throw away result
-unsigned int  fake_buffer[255];
-
 // Declarations regarding fallbacks
 // How many fallbacks before giving up :)
 #define FALLBACKS 1000000
-unsigned int number_of_fallbacks = 0;
-unsigned char fallback_flag = 0;
 
 // Different orders of going through the board:
 int order_diagonala[256] = {0, 1, 16, 2, 17, 32, 3, 18, 33, 48, 4, 19, 34, 49, 64, 5, 20, 35, 50, 65, 80, 6, 21, 36, 51, 66, 81, 96, 7, 22, 37, 52, 67, 82, 97, 112, 8, 23, 38, 53, 68, 83, 98, 113, 128, 9, 24, 39, 54, 69, 84, 99, 114, 129, 144, 10, 25, 40, 55, 70, 85, 100, 115, 130, 145, 160, 11, 26, 41, 56, 71, 86, 101, 116, 131, 146, 161, 176, 12, 27, 42, 57, 72, 87, 102, 117, 132, 147, 162, 177, 192, 13, 28, 43, 58, 73, 88, 103, 118, 133, 148, 163, 178, 193, 208, 14, 29, 44, 59, 74, 89, 104, 119, 134, 149, 164, 179, 194, 209, 224, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 31, 46, 61, 76, 91, 106, 121, 136, 151, 166, 181, 196, 211, 226, 241, 47, 62, 77, 92, 107, 122, 137, 152, 167, 182, 197, 212, 227, 242, 63, 78, 93, 108, 123, 138, 153, 168, 183, 198, 213, 228, 243, 79, 94, 109, 124, 139, 154, 169, 184, 199, 214, 229, 244, 95, 110, 125, 140, 155, 170, 185, 200, 215, 230, 245, 111, 126, 141, 156, 171, 186, 201, 216, 231, 246, 127, 142, 157, 172, 187, 202, 217, 232, 247, 143, 158, 173, 188, 203, 218, 233, 248, 159, 174, 189, 204, 219, 234, 249, 175, 190, 205, 220, 235, 250, 191, 206, 221, 236, 251, 207, 222, 237, 252, 223, 238, 253, 239, 254, 255};
 
-// Corners first
-int order[256] = {0, 1, 16, 17, 2, 18, 32, 33,  15, 14, 31, 30, 13, 29, 47, 46,  240, 241, 224, 225, 208, 209, 242, 226,   255, 254, 239, 238, 253, 237, 223, 222,    3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 63, 79, 95, 111, 127, 143, 159, 175, 191, 207, 252, 251, 250, 249, 248, 247, 246, 245, 244, 243, 192, 176, 160, 144, 128, 112, 96, 80, 64, 48, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 62, 78, 94, 110, 126, 142, 158, 174, 190, 206, 236, 235, 234, 233, 232, 231, 230, 229, 228, 227, 193, 177, 161, 145, 129, 113, 97, 81, 65, 49, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 61, 77, 93, 109, 125, 141, 157, 173, 189, 205, 221, 220, 219, 218, 217, 216, 215, 214, 213, 212, 211, 210, 194, 178, 162, 146, 130, 114, 98, 82, 66, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 76, 92, 108, 124, 140, 156, 172, 188, 204, 203, 202, 201, 200, 199, 198, 197, 196, 195, 179, 163, 147, 131, 115, 99, 83, 67, 68, 69, 70, 71, 72, 73, 74, 75, 91, 107, 123, 139, 155, 171, 187, 186, 185, 184, 183, 182, 181, 180, 164, 148, 132, 116, 100, 84, 85, 86, 87, 88, 89, 90, 106, 122, 138, 154, 170, 169, 168, 167, 166, 165, 149, 133, 117, 101, 102, 103, 104, 105, 121, 137, 153, 152, 151, 150, 134, 118, 119, 120, 136, 135 };
 
 // Spiral
 int order_spiral[256] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 31, 47, 63, 79, 95, 111, 127, 143, 159, 175, 191, 207, 223, 239, 255, 254, 253, 252, 251, 250, 249, 248, 247, 246, 245, 244, 243, 242, 241, 240, 224, 208, 192, 176, 160, 144, 128, 112, 96, 80, 64, 48, 32, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 46, 62, 78, 94, 110, 126, 142, 158, 174, 190, 206, 222, 238, 237, 236, 235, 234, 233, 232, 231, 230, 229, 228, 227, 226, 225, 209, 193, 177, 161, 145, 129, 113, 97, 81, 65, 49, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 61, 77, 93, 109, 125, 141, 157, 173, 189, 205, 221, 220, 219, 218, 217, 216, 215, 214, 213, 212, 211, 210, 194, 178, 162, 146, 130, 114, 98, 82, 66, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 76, 92, 108, 124, 140, 156, 172, 188, 204, 203, 202, 201, 200, 199, 198, 197, 196, 195, 179, 163, 147, 131, 115, 99, 83, 67, 68, 69, 70, 71, 72, 73, 74, 75, 91, 107, 123, 139, 155, 171, 187, 186, 185, 184, 183, 182, 181, 180, 164, 148, 132, 116, 100, 84, 85, 86, 87, 88, 89, 90, 106, 122, 138, 154, 170, 169, 168, 167, 166, 165, 149, 133, 117, 101, 102, 103, 104, 105, 121, 137, 153, 152, 151, 150, 134, 118, 119, 120, 136, 135 };
@@ -79,12 +60,13 @@ void get_constraints(piece **board, int position, unsigned char *top, unsigned c
 
 // According to the given colors, store fitting pieces in buffer
 // and return the number of them
-unsigned char get_fitting_pieces(piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
+//unsigned char get_fitting_pieces(piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
+unsigned char get_fitting_pieces(int options[24][24][24][24][256], int options_lengths[24][24][24][24], piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left);
 
 void get_random_corner_from_file(piece *pieces, char corner, unsigned int *corner_pieces);
 
 // Debug function to print buffers, not used in prod
-void print_buffers();
+void print_buffers(unsigned char *buffer_counts, unsigned int **buffers);
 
 // Nicely print the current state of the board
 void print_board(piece **board);
@@ -92,22 +74,23 @@ void print_board(piece **board);
 void count_fitting_edges(piece **board);
 
 // Print the board and also options for the unfilled positions
-void print_board_with_options(piece **board, piece *pieces);
+void print_board_with_options(int options[24][24][24][24][256], int options_lengths[24][24][24][24], piece **board, piece *pieces);
 void print_board_in_e2bucas_format(piece **board);
 
 // Check if the board has met all constraints (basically that
 // there is no stupid error in the code)
 int check_board(piece **board);
 
-int options[24][24][24][24][256];
-int options_lengths[24][24][24][24];
 
-unsigned int corner_pieces[8];
+int solve_eternity(int *order, int toptions[24][24][24][24][256], int toptions_lengths[24][24][24][24]);
+
+	int host_options[24][24][24][24][256];
+	int host_options_lengths[24][24][24][24];
 
 int main(int argc, char** argv) {
 
-	// Array of all pieces rotated according the the current solution
-	piece pieces[256];
+	// Corners first
+	int order[256] = {0, 1, 16, 17, 2, 18, 32, 33,  15, 14, 31, 30, 13, 29, 47, 46,  240, 241, 224, 225, 208, 209, 242, 226,   255, 254, 239, 238, 253, 237, 223, 222,    3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 63, 79, 95, 111, 127, 143, 159, 175, 191, 207, 252, 251, 250, 249, 248, 247, 246, 245, 244, 243, 192, 176, 160, 144, 128, 112, 96, 80, 64, 48, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 62, 78, 94, 110, 126, 142, 158, 174, 190, 206, 236, 235, 234, 233, 232, 231, 230, 229, 228, 227, 193, 177, 161, 145, 129, 113, 97, 81, 65, 49, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 61, 77, 93, 109, 125, 141, 157, 173, 189, 205, 221, 220, 219, 218, 217, 216, 215, 214, 213, 212, 211, 210, 194, 178, 162, 146, 130, 114, 98, 82, 66, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 76, 92, 108, 124, 140, 156, 172, 188, 204, 203, 202, 201, 200, 199, 198, 197, 196, 195, 179, 163, 147, 131, 115, 99, 83, 67, 68, 69, 70, 71, 72, 73, 74, 75, 91, 107, 123, 139, 155, 171, 187, 186, 185, 184, 183, 182, 181, 180, 164, 148, 132, 116, 100, 84, 85, 86, 87, 88, 89, 90, 106, 122, 138, 154, 170, 169, 168, 167, 166, 165, 149, 133, 117, 101, 102, 103, 104, 105, 121, 137, 153, 152, 151, 150, 134, 118, 119, 120, 136, 135 };
 
 	// Load pieces from file
 	FILE* input;
@@ -116,12 +99,6 @@ int main(int argc, char** argv) {
 	int counter = 0;
 	while (1) {
 		if (fscanf(input, "%lu%lu%lu%lu", &a, &b, &c, &d) != EOF) {
-			pieces[counter].a=a;
-			pieces[counter].b=b;
-			pieces[counter].c=c;
-			pieces[counter].d=d;
-			pieces[counter].number=counter;
-			pieces[counter].used=0;
 			pieces_reference[counter].a=a;
 			pieces_reference[counter].b=b;
 			pieces_reference[counter].c=c;
@@ -135,10 +112,54 @@ int main(int argc, char** argv) {
 	}
 	fclose(input);
 
-	// for return code
-	int res;
-
 #include "precomputed-options-array.c"
+
+	// for return code
+	int res = 0;
+
+	res = solve_eternity(order, host_options, host_options_lengths);
+
+	return res;
+}
+
+
+
+int solve_eternity(int *order, int options[24][24][24][24][256], int options_lengths[24][24][24][24]){
+
+// Declaration of buffers (arrays of fitting pieces for the particular position)
+// Each piece is identified by its number and rotation tag/mask (TOP_TOP/RIGHT_TOP,etc.)
+#define BUFFERS 256
+unsigned char current_buffer = 0;
+// Lengths of each buffer
+unsigned char buffer_counts[BUFFERS];
+// Store the position of the used piece in a buffer
+unsigned char position_of_used_piece_in_buffer[BUFFERS];
+// If there is at lfeast one constraint, 15 is enough
+// Actually, 12 would also be enough, but only in case we alway have 2 sides with constraints.
+// If we wanted to find pieces with only 1 constraint, we'd need 56 (for edges) or 49 for the rest
+#define BUFFERS_LENGTH 15
+unsigned int  buffers[BUFFERS][BUFFERS_LENGTH]; // 15 is empiricaly found sufficient size
+// Used when we want to only check the number of fitting pieces and throw away result
+unsigned int  fake_buffer[255];
+
+
+unsigned int number_of_fallbacks = 0;
+unsigned char fallback_flag = 0;
+
+unsigned int corner_pieces[8];
+
+
+
+	// Array of all pieces rotated according the the current solution
+	piece pieces[256];
+        for (int i = 0; i < 256; i++) {
+			pieces[i].a=pieces_reference[i].a;
+			pieces[i].b=pieces_reference[i].b;
+			pieces[i].c=pieces_reference[i].c;
+			pieces[i].d=pieces_reference[i].d;
+			pieces[i].number=pieces_reference[i].number;
+			pieces[i].used=pieces_reference[i].used;
+	}
 
         // Initialize the random number generator
 	struct timespec spec;
@@ -280,7 +301,7 @@ int main(int argc, char** argv) {
 			D printf("Top: %d Right: %d Bottom: %d Left: %d \n", top, right, bottom, left);
 
 			// Find fitting pieces for current position
-			buffer_counts[current_buffer] = get_fitting_pieces(pieces, buffers[current_buffer], top, right,  bottom, left);
+			buffer_counts[current_buffer] = get_fitting_pieces(options, options_lengths, pieces, buffers[current_buffer], top, right,  bottom, left);
 		}
 
 		D printf( "The length of the current buffer is  %d\n", buffer_counts[current_buffer]);
@@ -299,7 +320,7 @@ int main(int argc, char** argv) {
 			// if it's anything to check there
 			if (top != 23 || right != 23 || bottom != 23 || left != 23){
 				D printf("something to check %d \n", places_to_check[q]);
-				count = get_fitting_pieces(pieces, fake_buffer, top, right,  bottom, left);
+				count = get_fitting_pieces(options, options_lengths, pieces, fake_buffer, top, right,  bottom, left);
 			} else {
 				continue;
 			}
@@ -318,7 +339,7 @@ int main(int argc, char** argv) {
 
                     /* OUTPUT FOR GRAPHING - every fallback, print the current position
                     fprintf(stderr, "%d %d\n", number_of_fallbacks, iterator);
-                    print_board_with_options(board, pieces);
+                    print_board_with_options(options, options_lengths, board, pieces);
                     */
 
 		    // if (! fallback_flag) { printf("local max: %d\n", iterator); }
@@ -330,7 +351,7 @@ int main(int argc, char** argv) {
 					printf("Max:%d\n", max);
                                         count_fitting_edges(board);
                                         print_board_in_e2bucas_format(board);
-					print_board_with_options(board, pieces);
+					print_board_with_options(options, options_lengths, board, pieces);
 				}
 			}
 
@@ -430,7 +451,7 @@ int main(int argc, char** argv) {
         print_board_in_e2bucas_format(board);
 
         //count_fitting_edges();
-        res = check_board(board);
+        int res = check_board(board);
 
 	return res;
 } // End of main()
@@ -473,7 +494,7 @@ void get_constraints(piece **board, int position, unsigned char *top, unsigned c
 }
 
 // According to the given colors, store fitting pieces in buffer and return the number of them
-unsigned char get_fitting_pieces(piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
+unsigned char get_fitting_pieces(int options[24][24][24][24][256], int options_lengths[24][24][24][24], piece *pieces, unsigned int *buffer, const unsigned char top, const unsigned char right, const unsigned char bottom, const unsigned char left) {
 	int count = 0;
 
         D printf("Going to get fitting pieces for %d %d %d %d - length of options: %d\n", top, right, bottom, left, options_lengths[top][right][bottom][left]);
@@ -488,7 +509,7 @@ unsigned char get_fitting_pieces(piece *pieces, unsigned int *buffer, const unsi
 	return count;
 }
 
-void print_buffers() {
+void print_buffers(unsigned char *buffer_counts, unsigned int **buffers) {
 	for (int i = 0; i < BUFFERS; i++) {
 		if (buffer_counts[i] != 0) {
 			D printf("bufer %d ", i);
@@ -663,7 +684,7 @@ void print_board(piece **board) {
 
 }
 
-void print_board_with_options(piece **board, piece *pieces) {
+void print_board_with_options(int options[24][24][24][24][256], int options_lengths[24][24][24][24], piece **board, piece *pieces) {
 
 	for (int i = 0; i < 256; i++) {
 		if (i%16 == 0) printf("\n");
@@ -683,7 +704,7 @@ void print_board_with_options(piece **board, piece *pieces) {
             if (board[i] == NULL) {
                get_constraints(board, i, &top, &right, &bottom, &left);
                if (top != 23 || right !=23 || bottom != 23 || left != 23) {
-                   count = get_fitting_pieces(pieces, buffer, top, right,  bottom, left);
+                   count = get_fitting_pieces(options, options_lengths, pieces, buffer, top, right,  bottom, left);
                    printf(" Pos %d - %d:\n", i, count);
                    for (int j = 0; j < count; j++) {
                        printf("%d ", buffer[j] & WITHOUT_TAGS );
